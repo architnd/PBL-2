@@ -5,21 +5,17 @@
 
 using namespace std;
 class MobileUser {
-protected:
-    long int mobile_no;
+private:
+    long long mobile_no;
     string name;
-    long int billamount;
+    long long billamount;
    
 public:
-    MobileUser() {
-        mobile_no = 0;
-        name = "";
-        billamount = 0;
-    }
+    MobileUser() : mobile_no(0), name(""), billamount(0) {}
     friend class Records;
 };
 class Records {
-protected:
+private:
     MobileUser M[10];
     int n;
    
@@ -31,6 +27,7 @@ public:
     void display();
     int linear_Search(long int key);
     int Binary_Search(string key_name);
+    int Recursive_Binary_Search(int low, int high, string key_name);
 };
 void Records::accept() {
     for (int i = 0; i < n; i++) {
@@ -74,6 +71,22 @@ int Records::Binary_Search(string key_name) {
     }
     return -1;
 }
+int Records::Recursive_Binary_Search(int low, int high, string key_name) {
+    if (low <= high) {
+        int mid = low + (high - low) / 2;
+
+        if (M[mid].name == key_name) {
+            return mid;
+        }
+        
+        if (M[mid].name < key_name) {
+            return Recursive_Binary_Search(mid + 1, high, key_name);
+        } else {
+            return Recursive_Binary_Search(low, mid - 1, key_name);
+        }
+    }
+    return -1;
+}
 int main() {
     int n, choice;
     long int key;
@@ -96,8 +109,9 @@ int main() {
         cout << "1. Accept data" << endl;
         cout << "2. Display data" << endl;    
         cout << "3. Search by Mobile Number (Linear Search)" << endl;
-        cout << "4. Search by Name (Binary Search)" << endl;
-        cout << "5. Exit" << endl;
+        cout << "4. Search by Name (Binary Search non-recursive)" << endl;
+        cout << "5. Search by Name (Binary Search recursive)" << endl;
+        cout << "6. Exit" << endl;
         cout << "Enter choice: ";
         cin >> choice;
         switch(choice) {
@@ -128,6 +142,16 @@ int main() {
                 }
                 break;
             case 5:
+                cout << "Enter Name to search: ";
+                cin >> name_key;
+                index = r.Recursive_Binary_Search(0, n - 1, name_key);
+                if(index != -1) {
+                    cout << "Record found at index " << index << endl;
+                } else {
+                    cout << "Record not found." << endl;
+                }
+                break;
+            case 6:
                 cout << "Exiting..." << endl;
                 return 0;
             default:
