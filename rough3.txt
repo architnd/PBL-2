@@ -1,0 +1,191 @@
+#include <iostream>
+#include <vector>
+#include <list>
+#include <stack>
+#include <queue>
+#include <string>
+
+using namespace std;
+
+// Structure to represent a User (Node)
+struct User {
+    int id;
+    string name;
+};
+
+class FacebookGraph {
+    int users_count;            // Number of users (vertices)
+    vector<User> user_data;     // To store user details corresponding to IDs
+    vector<list<int>> adjList;  // Adjacency List (stores IDs of friends)
+
+public:
+    FacebookGraph(int n) {
+        users_count = n;
+        adjList.resize(n);
+        user_data.resize(n);
+    }
+
+    // A. Create the graph: Add user details and Friendships
+    void addUser(int id, string name) {
+        if (id >= 0 && id < users_count) {
+            user_data[id].id = id;
+            user_data[id].name = name;
+        }
+    }
+
+    void addFriendship(int src, int dest) {
+        if (src >= 0 && src < users_count && dest >= 0 && dest < users_count) {
+            adjList[src].push_back(dest);
+            adjList[dest].push_back(src); // Undirected graph
+        }
+    }
+
+    // B. Display the graph
+    void displayGraph() {
+        cout << "\n--- Facebook Friend Network (Adjacency List) ---" << endl;
+        for (int i = 0; i < users_count; i++) {
+            cout << "User [" << user_data[i].id << "] " << user_data[i].name << " is friends with: ";
+            for (int friend_id : adjList[i]) {
+                cout << "-> [" << friend_id << "] " << user_data[friend_id].name << " ";
+            }
+            cout << endl;
+        }
+    }
+
+    // Helper function for Recursive DFS
+    void dfsRecursiveHelper(int current_id, vector<bool>& visited) {
+        visited[current_id] = true;
+        cout << user_data[current_id].name << "(" << user_data[current_id].id << ") ";
+
+        for (int neighbor_id : adjList[current_id]) {
+            if (!visited[neighbor_id]) {
+                dfsRecursiveHelper(neighbor_id, visited);
+            }
+        }
+    }
+
+    // C. Perform Recursive DFS Traversal
+    void dfsRecursive(int start_id) {
+        vector<bool> visited(users_count, false);
+        cout << "\nDFS Traversal (Recursive) starting from " << user_data[start_id].name << ": ";
+        dfsRecursiveHelper(start_id, visited);
+        cout << endl;
+    }
+
+    // C & D. Perform Non-Recursive DFS Traversal
+    void dfsNonRecursive(int start_id) {
+        vector<bool> visited(users_count, false);
+        stack<int> s;
+
+        s.push(start_id);
+
+        cout << "\nDFS Traversal (Non-Recursive) starting from " << user_data[start_id].name << ": ";
+
+        while (!s.empty()) {
+            int current = s.top();
+            s.pop();
+
+            if (!visited[current]) {
+                cout << user_data[current].name << "(" << user_data[current].id << ") ";
+                visited[current] = true;
+            }
+
+            // Push all adjacent vertices to stack
+            // We use reverse iterator to process neighbors in the same order as recursive (optional)
+            for (auto it = adjList[current].rbegin(); it != adjList[current].rend(); ++it) {
+                if (!visited[*it]) {
+                    s.push(*it);
+                }
+            }
+        }
+        cout << endl;
+    }
+
+    // Perform BFS Traversal (Non-Recursive by definition)
+    void bfsTraversal(int start_id) {
+        vector<bool> visited(users_count, false);
+        queue<int> q;
+
+        visited[start_id] = true;
+        q.push(start_id);
+
+        cout << "\nBFS Traversal starting from " << user_data[start_id].name << ": ";
+
+        while (!q.empty()) {
+            int current = q.front();
+            q.pop();
+
+            cout << user_data[current].name << "(" << user_data[current].id << ") ";
+
+            for (int neighbor : adjList[current]) {
+                if (!visited[neighbor]) {
+                    visited[neighbor] = true;
+                    q.push(neighbor);
+                }
+            }
+        }
+        cout << endl;
+    }
+};
+
+int main() {
+    int n, choice, id1, id2, start_node;
+    string name;
+
+    cout << "Enter total number of users on Facebook Network: ";
+    cin >> n;
+
+    FacebookGraph fb(n);
+
+    // Input User Details
+    for (int i = 0; i < n; i++) {
+        cout << "Enter Name for User ID " << i << ": ";
+        cin >> name;
+        fb.addUser(i, name);
+    }
+
+    while (true) {
+        cout << "\n--- MENU ---" << endl;
+        cout << "1. Add Friendship (Link)" << endl;
+        cout << "2. Display Graph (Adjacency List)" << endl;
+        cout << "3. DFS Traversal (Recursive)" << endl;
+        cout << "4. DFS Traversal (Non-Recursive)" << endl;
+        cout << "5. BFS Traversal" << endl;
+        cout << "6. Exit" << endl;
+        cout << "Enter your choice: ";
+        cin >> choice;
+
+        switch (choice) {
+            case 1:
+                cout << "Enter ID of User 1: ";
+                cin >> id1;
+                cout << "Enter ID of User 2: ";
+                cin >> id2;
+                fb.addFriendship(id1, id2);
+                break;
+            case 2:
+                fb.displayGraph();
+                break;
+            case 3:
+                cout << "Enter Start ID for Recursive DFS: ";
+                cin >> start_node;
+                fb.dfsRecursive(start_node);
+                break;
+            case 4:
+                cout << "Enter Start ID for Non-Recursive DFS: ";
+                cin >> start_node;
+                fb.dfsNonRecursive(start_node);
+                break;
+            case 5:
+                cout << "Enter Start ID for BFS: ";
+                cin >> start_node;
+                fb.bfsTraversal(start_node);
+                break;
+            case 6:
+                return 0;
+            default:
+                cout << "Invalid Choice!" << endl;
+        }
+    }
+    return 0;
+}
