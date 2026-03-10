@@ -120,10 +120,10 @@ void Facebook::createAdjacencyLists(){
         cin >> choice;
         if(choice == 'y'){
             do{
-            cout << "Enter adjacent vertex id: ";
-            cin >> v;
-            if(v == i){
-                cout << "Self loop are not allowed" << endl;
+                cout << "Enter adjacent vertex id: ";
+                cin >> v;
+                if(v == i){
+                    cout << "Self loop are not allowed" << endl;
                 } else {
                     usernode* curr = new usernode();
                     curr->id = v;
@@ -175,6 +175,7 @@ void Facebook::DFS(int v){
     }
 }
 
+#if 0
 void Facebook::DFS_nr(int v){
     for(int i=0; i<n; i++){
         visited[i] = 0;
@@ -196,6 +197,42 @@ void Facebook::DFS_nr(int v){
             temp = temp->next;
         }
     }while(!s.empty());
+    cout << "NULL" << endl;
+}
+#endif
+
+void Facebook::DFS_nr(int v) {
+    for(int i = 0; i < n; i++) {
+        visited[i] = 0;
+    }
+    
+    cout << "Accept starting id for DFS: ";
+    cin >> v;
+    
+    s.push(v); 
+    
+    while(!s.empty()) {
+        v = s.top();
+        s.pop();
+        if(visited[v] == 0) {
+            visited[v] = 1;
+            cout << head[v]->id << "," << head[v]->name << " -> ";
+            // 1. Collect all unvisited neighbors in a temporary array
+            int tempArr[50];
+            int count = 0;
+            usernode* temp = head[v]->next;
+            while(temp != NULL) {
+                if(visited[temp->id] == 0) {
+                    tempArr[count++] = temp->id;
+                }
+                temp = temp->next;
+            }
+            //2. Push them onto the stack in REVERSE order
+            for(int i = count - 1; i >= 0; i--) {
+                s.push(tempArr[i]);
+            }
+        }
+    }
     cout << "NULL" << endl;
 }
 

@@ -93,10 +93,14 @@ void graph::prims(int v) {
             }
         }
     }
-    
-    cout << "\nPrim's Algorithm computed successfully.\n";
+    cout << "\nSpanning Tree Edges:\n";
+    cout << "Src\tDest\tCost\n";
+    for (int i = 0; i < edges_in_t; i++) {
+        cout << t[i][0] << "\t" << t[i][1] << "\t" << t[i][2] << endl;
+    }
+    cout << "\nTotal cost = " << min_cost << endl;
 }
-
+#if 0
 void graph::display_initial() {
     cout << "\nInitial Adjacency Matrix:\n";
     for (int i = 0; i < n; i++) {
@@ -113,25 +117,24 @@ void graph::display_t_matrix() {
         return;
     }
 
-    cout << "\nSpanning Tree Edges (t matrix):\n";
+    cout << "\nSpanning Tree Edges:\n";
     cout << "Src\tDest\tCost\n";
     for (int i = 0; i < edges_in_t; i++) {
         cout << t[i][0] << "\t" << t[i][1] << "\t" << t[i][2] << endl;
     }
     cout << "\nTotal cost = " << min_cost << endl;
 }
-
+#endif
 int main() {
     graph g;
     int choice, v;
 
     while (true) {
-        cout << "\n=== GRAPH OPERATIONS MENU ===\n";
+        cout << "\nMENU:\n";
         cout << "1. Create Graph\n";
         cout << "2. Display Initial Cost Adjacency Matrix\n";
         cout << "3. Use Prim's Algorithm\n";
-        cout << "4. Display Spanning Tree Edges (t matrix) & Cost\n";
-        cout << "5. Exit\n";
+        cout << "4. Exit\n";
         cout << "Enter your choice: ";
         cin >> choice;
 
@@ -148,9 +151,6 @@ int main() {
                 g.prims(v);
                 break;
             case 4:
-                g.display_t_matrix();
-                break;
-            case 5:
                 cout << "Exiting program.\n";
                 return 0;
             default:
