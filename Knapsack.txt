@@ -1,0 +1,63 @@
+### ItemData Class Variables
+* n: The total number of items currently added by the user.
+* weight[100]: An array storing the weight of each individual item. (It uses 1-based indexing, meaning weight[1] is the first item's weight).
+* value[100]: An array storing the profit (or value) of each individual item.
+
+### Knapsack Class Variables & Matrix
+* W: The total maximum weight capacity of the knapsack.
+* B[100][100]: The 2D Dynamic Programming matrix (table). The cell B[i][w] represents the maximum profit you can achieve using a combination of the first i items, assuming the knapsack currently has a capacity limit of w.
+
+### Local & Temporary Variables
+* w (in insert_items): Temporarily holds the weight inputted by the user before saving it to the weight array.
+* v (in insert_items): Temporarily holds the profit inputted by the user before saving it to the value array.
+* ch (in insert_items): Stores the user's 'Y' or 'N' character input to continue (or stop) adding items.
+* i (in solve loops): A loop counter representing the index of the current item being evaluated (runs from 1 to n).
+* w (in solve loops): A loop counter representing the current partial knapsack capacity being evaluated (runs from 0 to W).
+* choice (in main): Stores the user's number input to navigate the main menu.
+* items & knapsack (in main): The instantiated objects of your ItemData and Knapsack classes.
+
+class ItemData{
+    int n;
+    int weight[100];
+    int value[100];
+public:
+    ItemData(){
+        n = 0;
+        weight[0] = 0;
+        value[0] = 0;
+    }
+    friend class Knapsack;
+};
+class Knapsack
+{ 
+    int W;
+    int B[100][100];
+public:
+    Knapsack(){
+        W = 0;
+    }
+    void insert_items(ItemData &);
+    void set_capacity();
+    void solve(ItemData &);
+};
+
+for (int w = 0; w <= W; w++){
+        B[0][w] = 0;
+    }
+    for (int i = 1; i <= items.n; i++){
+        B[i][0] = 0;
+    }
+
+    for (int i = 1; i <= items.n; i++){
+        for (int w = 0; w <= W; w++){
+            if (items.weight[i] <= w){
+                if (items.value[i] + B[i - 1][w - items.weight[i]] > B[i - 1][w]){
+                    B[i][w] = items.value[i] + B[i - 1][w - items.weight[i]];
+                } else{
+                    B[i][w] = B[i - 1][w];
+                }
+            } else{
+                B[i][w] = B[i - 1][w];
+            }
+        }
+    }
