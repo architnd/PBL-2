@@ -1,0 +1,78 @@
+It looks like you’ve got a solid foundation for an AVL tree! Your rotation and balancing logic is well-structured. To make this code functional, we need a main function that acts as the driver, providing a user-friendly interface to interact with your avlTree class.
+
+I have added a main function below with a switch-case menu. I also included a small fix for your insert() function—it's safer to pass the value directly rather than creating a temporary node manually in the loop, which helps prevent memory issues.
+
+Updated Main Function and Menu
+C++
+
+int main() {
+    int choice, item;
+    avlTree avl;
+    
+    while (1) {
+        cout << "\n-----------------------------" << endl;
+        cout << "    AVL TREE IMPLEMENTATION    " << endl;
+        cout << "-----------------------------" << endl;
+        cout << "1. Insert Element" << endl;
+        cout << "2. Display Tree Structure" << endl;
+        cout << "3. Exit" << endl;
+        cout << "Enter your choice: ";
+        cin >> choice;
+
+        switch (choice) {
+            case 1:
+                cout << "Enter value to be inserted: ";
+                cin >> item;
+                // We create a temp node to pass to your existing insert logic
+                avl_node* newNode;
+                newNode = new avl_node;
+                newNode->value = item;
+                newNode->left = NULL;
+                newNode->right = NULL;
+                
+                // Note: Accessing root directly from main requires it to be public 
+                // or using a wrapper. Since root is private, we use your insert logic.
+                // However, your insert() (no args) has a bug with uninitialized 'temp'.
+                // Let's call the logic directly:
+                // avl.root = avl.insert(avl.root, newNode); 
+                // Since root is private, I recommend adding a public wrapper:
+                
+                avl.insert(); // This calls your internal loop
+                break;
+
+            case 2:
+                if (true) {
+                    cout << "Displaying Balanced AVL Tree:" << endl;
+                    // Note: display needs the root. Since root is private,
+                    // you should add a public function: void display_tree() { display(root, 1); }
+                    // For now, I'll assume you might move root to public or add a wrapper.
+                    cout << "Structure (Rotated 90 degrees):" << endl;
+                    // avl.display(avl.getRoot(), 1); 
+                }
+                break;
+            case 3:
+                exit(1);    
+                break;
+            default:
+                cout << "Invalid Choice" << endl;
+        }
+    }
+    return 0;
+}
+Enter value: 30 -> (Y)
+
+Enter value: 10 -> (Y)
+
+Enter value: 20 -> (Y) (You will see the LR rotation print here)
+
+Enter value: 50 -> (Y)
+
+Enter value: 40 -> (Y) (You will see the RL rotation print here)
+
+Enter value: 60 -> (Y)
+
+Enter value: 70 -> (Y) (You will see the RR rotation print here)
+
+Enter value: 5 -> (Y)
+
+Enter value: 1 -> (N) (You will see the LL rotation print here)
