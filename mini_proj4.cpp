@@ -1,71 +1,71 @@
 #include <iostream>
-#include <vector>
 #include <string>
-#include <algorithm>
 
 using namespace std;
 
+// Represents a single node on the map (house, pad, intersection)
 class vertex {
-    int id;
-    string type;
+    int id; 
+    string type; 
 public:
     vertex() : id(0), type("default") {}
+    
+    // Assigns ID and type to the node
     void set(int id, string type) {
         this->id = id;
         this->type = type;
     }
+    
     string getType() const { return type; }
+    
     friend class graph;
 };
 
+// Manages the map using fixed 50x50 arrays
 class graph {
-    // Replaced C-style arrays with dynamic 2D and 1D vectors
-    vector<vector<double>> length_matrix;
-    vector<vector<double>> energy_matrix;
-    vector<vertex> v_arr;
+    double length_matrix[50][50]; 
+    double energy_matrix[50][50];
+    vertex v_arr[50];
 
 public:
-    int n;
+    int n; 
+    
     graph() { n = 0; }
     
     void create_fixed_graph();
     void add_vertex();
-    vector<int> select_houses();
+    int select_houses(int houses_arr[]); 
     void reset_houses();
-    void simulate_delivery(const vector<int>& houses);
+    void simulate_delivery(const int houses[], int num_houses);
     
 private:
-    void resize_matrices(int new_size);
-    void dijkstra_helper(int src, vector<double>& dist, vector<int>& parent);
-    void print_path(int src, int dest, const vector<int>& parent);
+    void dijkstra_helper(int src, double dist[50], int parent[50]);
+    void print_path(int src, int dest, const int parent[50]);
     void add_edge(int u, int v, double length);
 };
 
-// Helper function to dynamically grow the 2D vectors without losing existing data
-void graph::resize_matrices(int new_size) {
-    length_matrix.resize(new_size);
-    energy_matrix.resize(new_size);
-    for (int i = 0; i < new_size; i++) {
-        length_matrix[i].resize(new_size, 0.0);
-        energy_matrix[i].resize(new_size, 0.0);
-    }
-}
-
+// Connects two nodes and automatically calculates energy cost
 void graph::add_edge(int u, int v, double length) {
     length_matrix[u][v] = length;
     length_matrix[v][u] = length;
+    
     energy_matrix[u][v] = length * 0.5;
     energy_matrix[v][u] = length * 0.5;
 }
 
+// Initializes the default 8-node map with predetermined connections
 void graph::create_fixed_graph() {
     n = 8;
     
-    // Size vectors exactly to our starting node count
-    v_arr.resize(n);
-    resize_matrices(n);
+    // Clear matrices
+    for (int i = 0; i < 50; i++) {
+        for (int j = 0; j < 50; j++) {
+            length_matrix[i][j] = 0.0;
+            energy_matrix[i][j] = 0.0;
+        }
+    }
 
-    // Set predefined vertices
+    // Set predefined node types
     v_arr[0].set(0, "warehouse");
     v_arr[1].set(1, "energy pad");
     v_arr[2].set(2, "energy pad");
@@ -75,28 +75,38 @@ void graph::create_fixed_graph() {
     v_arr[6].set(6, "intersection");
     v_arr[7].set(7, "intersection");
 
-    // Add edges (distances) -> Energy consumption will be half of this
-    add_edge(0, 4, 40); // Warehouse to intersection
-    add_edge(4, 1, 20); // Intersection to Pad 1
+    // Map out roads and distances
+    add_edge(0, 4, 40); 
+    add_edge(4, 1, 20); 
     add_edge(4, 5, 50); 
-    add_edge(5, 2, 10); // Intersection to Pad 2
+    add_edge(5, 2, 10); 
     add_edge(5, 6, 60);
-    add_edge(6, 3, 30); // Intersection to Pad 3
+    add_edge(6, 3, 30); 
     add_edge(6, 7, 40);
     add_edge(7, 0, 70);
-    add_edge(4, 7, 90); // Cross-map shortcut
+    add_edge(4, 7, 90); 
 
-    cout << "\n[+] Fixed graph generated successfully with 8 vertices (1 Warehouse, 3 Pads, 4 Intersections).\n";
+    cout << "\n[+] Fixed graph generated successfully with 8 vertices.\n";
 }
 
+// Allows user to dynamically add a new intersection and link it to the map
 void graph::add_vertex() {
-    int id = n;
-    n++; // Increase total vertex count
+    if (n >= 50) {
+        cout << "\n[!] ERROR: Maximum capacity of 50 vertices reached.\n";
+        return;
+    }
     
-    // Add new vertex to vector and expand 2D matrices
-    v_arr.push_back(vertex());
+    int id = n; 
+    n++;        
     v_arr[id].set(id, "intersection");
-    resize_matrices(n); 
+    
+    // Clear new rows/cols for the added node
+    for (int i = 0; i < n; i++) {
+        length_matrix[id][i] = 0.0;
+        length_matrix[i][id] = 0.0;
+        energy_matrix[id][i] = 0.0;
+        energy_matrix[i][id] = 0.0;
+    }
     
     cout << "\n[+] Adding new vertex " << id << " (Default type: intersection)\n";
     
@@ -104,12 +114,14 @@ void graph::add_vertex() {
     cout << "How many existing vertices is this connected to? ";
     cin >> edges;
     
+    // Link new node based on user input
     for (int i = 0; i < edges; i++) {
         int target;
         double dist;
         cout << "Enter target vertex ID and distance (e.g., 4 30): ";
         cin >> target >> dist;
-        if (target >= 0 && target < n - 1) { // -1 because n was already incremented
+        
+        if (target >= 0 && target < n - 1) { 
             add_edge(id, target, dist);
         } else {
             cout << "Invalid vertex ID!\n";
@@ -118,50 +130,67 @@ void graph::add_vertex() {
     cout << "[+] Vertex " << id << " added successfully.\n";
 }
 
-vector<int> graph::select_houses() {
-    vector<int> houses;
+// Prompts user to pick intersections to act as delivery targets
+int graph::select_houses(int houses_arr[]) {
     int count;
+    int valid_count = 0;
     cout << "How many intersections do you want to set as houses? ";
     cin >> count;
     
+    if(count > 50) {
+        count = 50;
+    }
+    
+    // Process user selections and populate array
     for (int i = 0; i < count; i++) {
         int id;
         cout << "Enter vertex ID for house " << i + 1 << ": ";
         cin >> id;
+        
         if (id >= 0 && id < n && v_arr[id].getType() == "intersection") {
-            v_arr[id].type = "house";
-            houses.push_back(id);
+            v_arr[id].type = "house"; 
+            houses_arr[valid_count] = id; 
+            valid_count++;
             cout << "Vertex " << id << " is now a house.\n";
         } else {
             cout << "Invalid ID or not an intersection. Try again.\n";
-            i--; // Retry
+            i--; 
         }
     }
-    return houses;
+    return valid_count; 
 }
 
+// Reverts all house nodes back to normal intersections
 void graph::reset_houses() {
     int count = 0;
     for (int i = 0; i < n; i++) {
         if (v_arr[i].getType() == "house") {
-            v_arr[i].type = "intersection";
+            v_arr[i].type = "intersection"; 
             count++;
         }
     }
-    cout << "[+] Reset " << count << " houses back to intersections.\n";
+    cout << " Reset " << count << " houses back to intersections.\n";
 }
 
-void graph::dijkstra_helper(int src, vector<double>& dist, vector<int>& parent) {
-    dist.assign(n, 9999.0);
-    parent.assign(n, -1);
-    vector<bool> visited(n, false);
+// Finds shortest paths from a source to all nodes, storing distances and routes
+void graph::dijkstra_helper(int src, double dist[50], int parent[50]) {
+    bool visited[50];
 
-    dist[src] = 0;
+    // Initialize arrays to represent unvisited, disconnected state
+    for(int i = 0; i < n; i++) {
+        dist[i] = 9999.0;
+        parent[i] = -1;
+        visited[i] = false;
+    }
 
+    dist[src] = 0.0;
+
+    // Main loop to lock in shortest paths node by node
     for (int i = 0; i < n - 1; i++) {
         double min_dist = 9999.0; 
         int u = -1;
 
+        // Find the closest unvisited node
         for (int j = 0; j < n; j++) {
             if (!visited[j] && dist[j] < min_dist) {
                 min_dist = dist[j];
@@ -172,104 +201,137 @@ void graph::dijkstra_helper(int src, vector<double>& dist, vector<int>& parent) 
         if (u == -1) break;
         visited[u] = true;
 
+        // Check all neighbors to find cheaper shortcuts (Relaxation)
         for (int v = 0; v < n; v++) {
             if (!visited[v] && energy_matrix[u][v] > 0) {
                 if (dist[u] + energy_matrix[u][v] < dist[v]) {
                     dist[v] = dist[u] + energy_matrix[u][v];
-                    parent[v] = u;
+                    parent[v] = u; 
                 }
             }
         }
     }
 }
 
-void graph::print_path(int src, int dest, const vector<int>& parent) {
+// Traces the parent array backward to print the driving route
+void graph::print_path(int src, int dest, const int parent[50]) {
     if (src == dest) return;
-    vector<int> path;
+    
+    int path[50];
+    int path_len = 0;
     int curr = dest;
+    
+    // Trace backward from destination to source
     while (curr != -1) {
-        path.push_back(curr);
+        path[path_len] = curr;
+        path_len++;
         if (curr == src) break;
-        curr = parent[curr];
+        curr = parent[curr]; 
     }
+    
     cout << "    Route: ";
-    for (int i = path.size() - 1; i >= 0; i--) {
-        cout << path[i] << (i == 0 ? "" : " -> ");
+    // Print forward
+    for (int i = path_len - 1; i >= 0; i--) {
+        cout << path[i];
+        if (i != 0) {
+            cout << " -> ";
+        }
     }
     cout << "\n";
 }
 
-void graph::simulate_delivery(const vector<int>& houses) {
-    if (houses.empty()) {
+// Manages delivery routing, ensuring the EV always has enough battery for a safe trip
+void graph::simulate_delivery(const int houses[], int num_houses) {
+    if (num_houses == 0) {
         cout << "No houses selected for delivery!\n";
         return;
     }
 
     double current_energy = 100.0;
-    int current_node = 0; // Starts at warehouse
+    int current_node = 0; 
 
-    vector<int> route_targets = houses;
-    route_targets.push_back(0); // Return to warehouse at the end
+    // Build the manifest and append the warehouse (0) as the final forced stop
+    int route_targets[50];
+    for(int i = 0; i < num_houses; i++) {
+        route_targets[i] = houses[i];
+    }
+    route_targets[num_houses] = 0; 
+    int total_targets = num_houses + 1;
 
-    cout << "\n=== STARTING EV DELIVERY SIMULATION ===\n";
+    cout << "\nSTARTING EV DELIVERY SIMULATION:\n";
     cout << "Initial Energy: 100.0 | Location: Warehouse (0)\n\n";
 
-    for (size_t t = 0; t < route_targets.size(); t++) {
+    // Process each delivery target in the manifest
+    for (int t = 0; t < total_targets; t++) {
         int target = route_targets[t];
-        string target_name = (target == 0) ? "Warehouse (0)" : "House (" + to_string(target) + ")";
-        cout << ">>> Next Delivery Target: " << target_name << "\n";
+        
+        // Format display name
+        string target_name;
+        if (target == 0) {
+            target_name = "Warehouse (0)";
+        } else {
+            target_name = "House (" + to_string(target) + ")";
+        }
+        
+        cout << "Next Delivery Target: " << target_name << "\n";
 
+        // Loop continues if a charging detour is taken before reaching target
         while (current_node != target) {
-            vector<double> dist_from_curr;
-            vector<int> parent_from_curr;
+            
+            // Phase 1: Calculate energy needed for the direct route
+            double dist_from_curr[50];
+            int parent_from_curr[50];
             dijkstra_helper(current_node, dist_from_curr, parent_from_curr);
 
             double E_to_target = dist_from_curr[target];
 
-            // 1. Calculate energy needed from target to nearest pad (or 0 if target is warehouse)
+            // Phase 2: Calculate buffer energy needed to reach safety after delivery
             double E_target_to_pad = 9999.0;
+            
             if (v_arr[target].getType() == "warehouse") {
-                E_target_to_pad = 0;
+                E_target_to_pad = 0.0;
             } else {
-                vector<double> dist_from_target;
-                vector<int> temp_parent;
+                double dist_from_target[50];
+                int temp_parent[50];
                 dijkstra_helper(target, dist_from_target, temp_parent);
+                
                 for (int i = 0; i < n; i++) {
                     if (v_arr[i].getType() == "energy pad" || v_arr[i].getType() == "warehouse") {
-                        E_target_to_pad = min(E_target_to_pad, dist_from_target[i]);
+                        if(dist_from_target[i] < E_target_to_pad) {
+                            E_target_to_pad = dist_from_target[i];
+                        }
                     }
                 }
             }
 
-            // 2. Check if we have enough energy to reach target AND then safely reach a pad
+            // Phase 3: Decide between direct trip or detour
             if (current_energy >= E_to_target + E_target_to_pad) {
+                // Execute direct route and deduct energy
                 cout << "    [SUCCESS] Enough energy to reach " << target_name << " directly.\n";
                 print_path(current_node, target, parent_from_curr);
                 
                 current_energy -= E_to_target;
-                current_node = target;
-                
+                current_node = target; 
                 cout << "    Arrived at " << target_name << ". Remaining Energy: " << current_energy << "\n\n";
             } else {
-                // 3. Not enough energy! Find the best detour to an Energy Pad
+                // Scan for the most efficient reachable charging pad
                 cout << "    [WARNING] Insufficient energy for round-trip safety. Locating nearest reachable Energy Pad...\n";
-                
                 int best_pad = -1;
                 double min_detour_cost = 9999.0;
 
                 for (int i = 0; i < n; i++) {
                     if (v_arr[i].getType() == "energy pad" || v_arr[i].getType() == "warehouse") {
                         if (dist_from_curr[i] <= current_energy) {
-                            // Check if this pad can reach the target safely after full charge
-                            vector<double> dist_from_pad;
-                            vector<int> p_pad;
+                            
+                            double dist_from_pad[50];
+                            int p_pad[50];
                             dijkstra_helper(i, dist_from_pad, p_pad);
                             
                             if (100.0 >= dist_from_pad[target] + E_target_to_pad) {
                                 double detour_cost = dist_from_curr[i] + dist_from_pad[target];
                                 if (detour_cost < min_detour_cost) {
                                     min_detour_cost = detour_cost;
-                                    best_pad = i;
+                                    best_pad = i; 
                                 }
                             }
                         }
@@ -281,24 +343,28 @@ void graph::simulate_delivery(const vector<int>& houses) {
                     return;
                 }
 
+                // Execute detour and fully recharge battery
                 cout << "    Detouring to " << v_arr[best_pad].getType() << " (" << best_pad << ").\n";
                 print_path(current_node, best_pad, parent_from_curr);
                 
                 current_node = best_pad;
-                current_energy = 100.0;
+                current_energy = 100.0; 
                 cout << "    [CHARGED] Battery restored to 100.0 at node " << best_pad << ".\n\n";
             }
         }
     }
-    cout << "=== ROUTE COMPLETE! EV returned to Warehouse. ===\n";
+    cout << "\nROUTE COMPLETE! EV returned to Warehouse.\n";
 }
 
 int main() {
     graph g;
-    g.create_fixed_graph();
-    int choice;
-    vector<int> current_houses;
+    g.create_fixed_graph(); 
     
+    int choice;
+    int current_houses[50]; 
+    int num_houses = 0;     
+    
+    // Main system menu loop
     while (true) {
         cout << "\n--- EV Delivery System Menu ---\n";
         cout << "1. Add a vertex\n";
@@ -309,18 +375,19 @@ int main() {
         cout << "Enter choice: ";
         cin >> choice;
         
+        // Execute user selection
         if (choice == 1) {
             g.add_vertex();
         } else if (choice == 2) {
-            current_houses = g.select_houses();
+            num_houses = g.select_houses(current_houses);
         } else if (choice == 3) {
-            g.simulate_delivery(current_houses);
+            g.simulate_delivery(current_houses, num_houses);
         } else if (choice == 4) {
             g.reset_houses();
-            current_houses.clear();
+            num_houses = 0; 
         } else if (choice == 5) {
             cout << "Exiting system...\n";
-            break;
+            break; 
         } else {
             cout << "Invalid choice!\n";
         }
