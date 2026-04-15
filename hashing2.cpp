@@ -186,64 +186,6 @@ public:
         cout << "\nTable successfully built and saved to student.txt.\n";
     }
 
-    void retrieve() {
-        ifstream in("student.txt");
-        if (!in) {
-            cout << " No tables created yet.\n";
-            return;
-        }
-
-        int tno, search_key;
-        cout << "\nEnter Table Number to search in: ";
-        cin >> tno;
-        cout << "Enter Roll no. to find: ";
-        cin >> search_key;
-
-        string target = "TABLE " + to_string(tno);
-        bool table_found = false;
-        bool key_found = false;
-        string line;
-        
-        while (getline(in, line)) {
-            // Find the correct table
-            if (line.find(target) != string::npos) {
-                table_found = true;
-                
-                // Skip the header line
-                getline(in, line); 
-                
-                // Read rows until we hit a blank line (end of table)
-                while (getline(in, line) && !line.empty()) {
-                    int first_tab = line.find('\t');
-                    if (first_tab != string::npos) {
-                        int second_tab = line.find('\t', first_tab + 1);
-                        if (second_tab != string::npos) {
-                            // Extract just the roll number part of the string
-                            string rno_str = line.substr(first_tab + 1, second_tab - first_tab - 1);
-                            
-                            if (rno_str == to_string(search_key)) {
-                                cout << "\nkey found\n";
-                                cout << "pos\tRNo\tName\tMarks\n";
-                                cout << line << "\n";
-                                key_found = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-                break; 
-            }
-        }
-        
-        if (!table_found) {
-            cout << "Table " << tno << " not found.\n";
-        } else if (!key_found) {
-            cout << "\nkey not found\n";
-        }
-        
-        in.close();
-    }
-
     void displaySpecific() {
         ifstream in("student.txt");
         if (!in) {
@@ -307,8 +249,7 @@ int main() {
         cout << "2. Create Hash Table(WITH Replacement)\n";
         cout << "3. Display Specific Table Number\n";
         cout << "4. Display All Tables\n";
-        cout << "5. Retrieve a Record\n";
-        cout << "6. Exit\n";
+        cout << "5. Exit\n";
         cout << "Enter your choice: ";
         cin >> choice;
 
@@ -325,16 +266,13 @@ int main() {
             case 4:
                 s.displayAll();
                 break;
-            case 5:
-                s.retrieve();
-                break;
-            case 6: 
+            case 5: 
                 cout << "Exiting program...\n"; 
                 break;
             default: 
                 cout << "Invalid choice. Please try again.\n";
         }
-    } while (choice != 6);
+    } while (choice != 5);
 
     return 0;
 }
